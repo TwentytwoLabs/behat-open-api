@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace TwentytwoLabs\Behat\OpenApi\Model;
+namespace TwentytwoLabs\BehatOpenApiExtension\Model;
 
 use Symfony\Component\PropertyAccess\PropertyAccessor;
 
 class Json
 {
-    protected $content;
+    protected \stdClass $content;
 
     public function __construct($content)
     {
         $this->content = $this->decode((string) $content);
     }
 
-    public function getContent()
+    public function getContent(): \stdClass
     {
         return $this->content;
     }
@@ -48,7 +48,7 @@ class Json
         return $this->encode(false);
     }
 
-    private function decode($content)
+    private function decode($content): \stdClass
     {
         $result = json_decode($content);
 

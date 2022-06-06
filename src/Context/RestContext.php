@@ -2,18 +2,25 @@
 
 declare(strict_types=1);
 
-namespace TwentytwoLabs\Behat\OpenApi\Context;
+namespace TwentytwoLabs\BehatOpenApiExtension\Context;
 
 use Behat\Gherkin\Node\PyStringNode;
 use Behat\Gherkin\Node\TableNode;
-use TwentytwoLabs\Behat\OpenApi\Client\GuzzleClient;
+use TwentytwoLabs\BehatOpenApiExtension\Handler\GuzzleHandler;
 
 /**
  * Class RestContext.
  */
 class RestContext extends BaseContext
 {
-    private ?GuzzleClient $client = null;
+    private ?GuzzleHandler $client = null;
+
+    public function setClient(GuzzleHandler $client): self
+    {
+        $this->client = $client;
+
+        return $this;
+    }
 
     /**
      * Sends a HTTP request
@@ -22,13 +29,7 @@ class RestContext extends BaseContext
      */
     public function iSendARequestTo($method, $url, PyStringNode $body = null, $files = [])
     {
-        return $this->getClient()->send(
-            $method,
-            $this->locatePath($url),
-            [],
-            $files,
-            $body !== null ? $body->getRaw() : null
-        );
+        return $this->client->send($method, $url, [], null !== $body ? $body->getRaw() : null);
     }
 
     /**
@@ -38,7 +39,6 @@ class RestContext extends BaseContext
      */
     public function iSendARequestToWithParameters($method, $url, TableNode $data)
     {
-        $files = [];
         $parameters = [];
 
         foreach ($data->getHash() as $row) {
@@ -46,19 +46,14 @@ class RestContext extends BaseContext
                 throw new \Exception("You must provide a 'key' and 'value' column in your table node.");
             }
 
-            if (is_string($row['value']) && substr($row['value'], 0, 1) == '@') {
-                $files[$row['key']] = rtrim($this->getMinkParameter('files_path'), DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.substr($row['value'],1);
-            }
-            else {
-                $parameters[$row['key']] = $row['value'];
-            }
+            $parameters[$row['key']] = $row['value'];
         }
 
-        return $this->getClient()->send(
+        return $this->client->send(
             $method,
-            $this->locatePath($url),
-            $parameters,
-            $files
+            $url,
+            ['Content-Type' => 'application/x-www-form-urlencoded'],
+            http_build_query($parameters)
         );
     }
 
@@ -69,7 +64,23 @@ class RestContext extends BaseContext
      */
     public function iSendARequestToWithBody($method, $url, PyStringNode $body)
     {
-        return $this->iSendARequestTo($method, $url, $body);
+        $this->iSendARequestTo($method, $url, $body);
+    }
+
+    /**
+     * @Then print last response
+     */
+    public function printLastResponse()
+    {
+        echo $this->client->getResponseContent();
+    }
+
+    /**
+     * @Then the response status code should be :arg1
+     */
+    public function theResponseStatusCodeShouldBe($arg1)
+    {
+        $this->assertSame($arg1, (string) $this->client->getStatusCode());
     }
 
     /**
@@ -81,7 +92,7 @@ class RestContext extends BaseContext
     public function theResponseShouldBeEqualTo(PyStringNode $expected)
     {
         $expected = str_replace('\\"', '"', $expected);
-        $actual = $this->getClient()->getResponseContent();
+        $actual = $this->client->getResponseContent();
 
         $this->assertEquals(
             $expected,
@@ -97,7 +108,8 @@ class RestContext extends BaseContext
      */
     public function theResponseShouldBeEmpty()
     {
-        $actual = $this->getClient()->getResponseContent();
+        $actual = $this->client->getResponseContent();
+
         $this->assertTrue(
             empty($actual),
             sprintf('The response of the current page is not empty, it is: %s', $actual)
@@ -111,7 +123,7 @@ class RestContext extends BaseContext
      */
     public function theHeaderShouldBeEqualTo($name, $value)
     {
-        $actual = $this->getClient()->getResponseHeader($name);
+        $actual = $this->client->getResponseHeader($name);
 
         $this->assertEquals(
             strtolower($value),
@@ -127,7 +139,7 @@ class RestContext extends BaseContext
      */
     public function theHeaderShouldNotBeEqualTo($name, $value)
     {
-        $actual = $this->getClient()->getResponseHeader($name);
+        $actual = $this->client->getResponseHeader($name);
 
         if (strtolower($value) === strtolower($actual)) {
             throw new \Exception(sprintf('The header [%s] is equal to %s', $name, $actual));
@@ -141,7 +153,7 @@ class RestContext extends BaseContext
      */
     public function theHeaderShouldContain($name, $value)
     {
-        $actual = $this->getClient()->getResponseHeader($name);
+        $actual = $this->client->getResponseHeader($name);
 
         $this->assertContains(
             $value,
@@ -159,7 +171,7 @@ class RestContext extends BaseContext
     {
         $this->assertNotContains(
             $value,
-            $this->getClient()->getResponseHeader($name),
+            $this->client->getResponseHeader($name),
             sprintf('The header [%s] contains [%s]', $name, $value)
         );
     }
@@ -181,7 +193,7 @@ class RestContext extends BaseContext
 
     protected function theHeaderShouldExist($name)
     {
-        return $this->getClient()->getResponseHeader($name);
+        return $this->client->getResponseHeader($name);
     }
 
     /**
@@ -189,7 +201,7 @@ class RestContext extends BaseContext
      */
     public function theHeaderShouldMatch($name, $regex)
     {
-        $actual = $this->getClient()->getResponseHeader($name);
+        $actual = $this->client->getResponseHeader($name);
 
         $this->assertEquals(
             1,
@@ -218,8 +230,8 @@ class RestContext extends BaseContext
      */
     public function theResponseShouldExpireInTheFuture()
     {
-        $date = new \DateTime($this->getClient()->getResponseRawHeader('Date')[0]);
-        $expires = new \DateTime($this->getClient()->getResponseRawHeader('Expires')[0]);
+        $date = new \DateTime($this->client->getResponseRawHeader('Date')[0]);
+        $expires = new \DateTime($this->client->getResponseRawHeader('Expires')[0]);
 
         $this->assertSame(
             1,
@@ -235,7 +247,7 @@ class RestContext extends BaseContext
      */
     public function iAddHeaderEqualTo($name, $value)
     {
-        $this->getClient()->setRequestHeader($name, $value);
+        $this->client->setRequestHeader($name, $value);
     }
 
     /**
@@ -243,7 +255,7 @@ class RestContext extends BaseContext
      */
     public function theResponseShouldBeEncodedIn($encoding)
     {
-        $content = $this->getClient()->getResponseContent();
+        $content = $this->client->getResponseContent();
         if (!mb_check_encoding($content, $encoding)) {
             throw new \Exception("The response is not encoded in $encoding");
         }
@@ -257,27 +269,16 @@ class RestContext extends BaseContext
     public function printLastResponseHeaders()
     {
         $text = '';
-        $headers = $this->getClient()->getResponseHeaders();
+        $headers = $this->client->getResponseHeaders();
 
         foreach ($headers as $name => $value) {
-            $text .= $name . ': '. $this->getClient()->getResponseHeader($name) . "\n";
+            $text .= $name . ': '. $this->client->getResponseHeader($name) . "\n";
         }
         echo $text;
     }
 
-    public function getClient(): GuzzleClient
+    public function getClient(): GuzzleHandler
     {
-        if (null === $this->client) {
-            $this->client = new GuzzleClient();
-        }
-
         return $this->client;
-    }
-
-    private function locatePath(string $path): string
-    {
-        $startUrl = rtrim($this->getMinkParameter('base_url') ?? '', '/') . '/';
-
-        return 0 !== strpos($path, 'http') ? $startUrl . ltrim($path, '/') : $path;
     }
 }

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace TwentytwoLabs\Behat\OpenApi\Context;
+namespace TwentytwoLabs\BehatOpenApiExtension\Context;
 
 use Behat\Behat\Context\Context;
 use Behat\Behat\Hook\Scope\BeforeScenarioScope;
@@ -10,7 +10,7 @@ use Behat\Behat\Hook\Scope\BeforeScenarioScope;
 /**
  * Class BaseContext.
  */
-abstract class BaseContext implements Context
+abstract class BaseContext implements Context, ClientAwareInterface
 {
     protected function not(callable $callbable, $errorMessage)
     {

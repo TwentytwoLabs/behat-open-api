@@ -2,28 +2,26 @@
 
 declare(strict_types=1);
 
-namespace TwentytwoLabs\Behat\OpenApi\Context;
+namespace TwentytwoLabs\BehatOpenApiExtension\Context;
 
-use Behat\Behat\Hook\Scope\BeforeScenarioScope;
 use Behat\Gherkin\Node\PyStringNode;
 use Behat\Gherkin\Node\TableNode;
 use Symfony\Component\PropertyAccess\PropertyAccessor;
-use TwentytwoLabs\Behat\OpenApi\Client\GoutteClient;
-use TwentytwoLabs\Behat\OpenApi\Model\Json;
+use TwentytwoLabs\BehatOpenApiExtension\Handler\GuzzleHandler;
+use TwentytwoLabs\BehatOpenApiExtension\Model\Json;
 
 /**
  * Class JsonContext.
  */
 class JsonContext extends BaseContext
 {
-    private RestContext $restContext;
+    private GuzzleHandler $client;
 
-    /**
-     * @BeforeScenario
-     */
-    public function beforeScenario(BeforeScenarioScope $scope)
+    public function setClient(GuzzleHandler $client): self
     {
-        $this->restContext = $scope->getEnvironment()->getContext(RestContext::class);
+        $this->client = $client;
+
+        return $this;
     }
 
     /**
@@ -33,6 +31,7 @@ class JsonContext extends BaseContext
      */
     public function theResponseShouldBeInJson()
     {
+        $this->assertContains('json', $this->client->getResponseHeader('Content-Type'));
         $this->getJson();
     }
 
@@ -323,17 +322,9 @@ class JsonContext extends BaseContext
         $this->assertValuesOfJson($expectedItem, $item);
     }
 
-    /**
-     * @Then print last JSON response
-     */
-    public function printLastJsonResponse()
-    {
-        echo $this->getJson()->encode();
-    }
-
     protected function getJson(): Json
     {
-        return new Json($this->getClient()->getResponseContent());
+        return new Json($this->client->getResponseContent());
     }
 
     private function evaluate(Json $json, $expression)
@@ -386,10 +377,5 @@ class JsonContext extends BaseContext
         }
 
         $this->assertTrue(null === $message, $message);
-    }
-
-    private function getClient(): GoutteClient
-    {
-        return $this->restContext->getClient();
     }
 }
