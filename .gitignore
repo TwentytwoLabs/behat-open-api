@@ -1,7 +1,3 @@
-atoum.xunit.xml
-behat.yml
-behatch_contexts.phar
-bin/
+bin
 composer.lock
-composer.phar
 vendor

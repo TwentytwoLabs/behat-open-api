@@ -7,36 +7,32 @@ namespace TwentytwoLabs\BehatOpenApiExtension\Context;
 use Behat\Gherkin\Node\PyStringNode;
 use Behat\Gherkin\Node\TableNode;
 use Symfony\Component\PropertyAccess\PropertyAccessor;
-use TwentytwoLabs\BehatOpenApiExtension\Handler\GuzzleHandler;
+use TwentytwoLabs\ArrayComparator\AsserterTrait as ArrayComparatorAsserterTrait;
+use TwentytwoLabs\BehatOpenApiExtension\AsserterTrait;
+use TwentytwoLabs\BehatOpenApiExtension\Exception\ArrayContainsComparatorException;
 use TwentytwoLabs\BehatOpenApiExtension\Model\Json;
 
 /**
  * Class JsonContext.
  */
-class JsonContext extends BaseContext
+class JsonContext extends RawRestContext
 {
-    private GuzzleHandler $client;
-
-    public function setClient(GuzzleHandler $client): self
-    {
-        $this->client = $client;
-
-        return $this;
-    }
+    use AsserterTrait;
+    use ArrayComparatorAsserterTrait;
 
     /**
-     * Checks, that the response is correct JSON
+     * Checks, that the response is correct JSON.
      *
      * @Then the response should be in JSON
      */
     public function theResponseShouldBeInJson()
     {
-        $this->assertContains('json', $this->client->getResponseHeader('Content-Type'));
+        $this->assertContains('json', $this->getResponseHeader('Content-Type'));
         $this->getJson();
     }
 
     /**
-     * Checks, that the response is not correct JSON
+     * Checks, that the response is not correct JSON.
      *
      * @Then the response should not be in JSON
      */
@@ -46,7 +42,7 @@ class JsonContext extends BaseContext
     }
 
     /**
-     * Checks, that given JSON node is equal to given value
+     * Checks, that given JSON node is equal to given value.
      *
      * @Then the JSON node :node should be equal to :text
      */
@@ -62,7 +58,7 @@ class JsonContext extends BaseContext
     }
 
     /**
-     * Checks, that given JSON nodes are equal to givens values
+     * Checks, that given JSON nodes are equal to givens values.
      *
      * @Then the JSON nodes should be equal to:
      */
@@ -74,7 +70,7 @@ class JsonContext extends BaseContext
     }
 
     /**
-     * Checks, that given JSON node matches given pattern
+     * Checks, that given JSON node matches given pattern.
      *
      * @Then the JSON node :node should match :pattern
      */
@@ -84,13 +80,13 @@ class JsonContext extends BaseContext
 
         $actual = $this->evaluate($json, $node);
 
-        if (preg_match($pattern, $actual) === 0) {
+        if (0 === preg_match($pattern, $actual)) {
             throw new \Exception(sprintf("The node value is '%s'", json_encode($actual)));
         }
     }
 
     /**
-     * Checks, that given JSON node is null
+     * Checks, that given JSON node is null.
      *
      * @Then the JSON node :node should be null
      */
@@ -118,7 +114,7 @@ class JsonContext extends BaseContext
     }
 
     /**
-     * Checks, that given JSON node is true
+     * Checks, that given JSON node is true.
      *
      * @Then the JSON node :node should be true
      */
@@ -132,7 +128,7 @@ class JsonContext extends BaseContext
     }
 
     /**
-     * Checks, that given JSON node is false
+     * Checks, that given JSON node is false.
      *
      * @Then the JSON node :node should be false
      */
@@ -146,7 +142,7 @@ class JsonContext extends BaseContext
     }
 
     /**
-     * Checks, that given JSON node is equal to the given string
+     * Checks, that given JSON node is equal to the given string.
      *
      * @Then the JSON node :node should be equal to the string :text
      */
@@ -157,14 +153,12 @@ class JsonContext extends BaseContext
         $actual = $this->evaluate($json, $node);
 
         if ($actual !== $text) {
-            throw new \Exception(
-                sprintf('The node value is `%s`', json_encode($actual))
-            );
+            throw new \Exception(sprintf('The node value is `%s`', json_encode($actual)));
         }
     }
 
     /**
-     * Checks, that given JSON node is equal to the given number
+     * Checks, that given JSON node is equal to the given number.
      *
      * @Then the JSON node :node should be equal to the number :number
      */
@@ -175,14 +169,12 @@ class JsonContext extends BaseContext
         $actual = $this->evaluate($json, $node);
 
         if ($actual !== (float) $number && $actual !== (int) $number) {
-            throw new \Exception(
-                sprintf('The node value is `%s`', json_encode($actual))
-            );
+            throw new \Exception(sprintf('The node value is `%s`', json_encode($actual)));
         }
     }
 
     /**
-     * Checks, that given JSON node has N element(s)
+     * Checks, that given JSON node has N element(s).
      *
      * @Then the JSON node :node should have :count element(s)
      */
@@ -196,7 +188,7 @@ class JsonContext extends BaseContext
     }
 
     /**
-     * Checks, that given JSON node contains given value
+     * Checks, that given JSON node contains given value.
      *
      * @Then the JSON node :node should contain :text
      */
@@ -210,7 +202,7 @@ class JsonContext extends BaseContext
     }
 
     /**
-     * Checks, that given JSON nodes contains values
+     * Checks, that given JSON nodes contains values.
      *
      * @Then the JSON nodes should contain:
      */
@@ -222,7 +214,7 @@ class JsonContext extends BaseContext
     }
 
     /**
-     * Checks, that given JSON node does not contain given value
+     * Checks, that given JSON node does not contain given value.
      *
      * @Then the JSON node :node should not contain :text
      */
@@ -236,7 +228,7 @@ class JsonContext extends BaseContext
     }
 
     /**
-     * Checks, that given JSON nodes does not contain given value
+     * Checks, that given JSON nodes does not contain given value.
      *
      * @Then the JSON nodes should not contain:
      */
@@ -248,7 +240,7 @@ class JsonContext extends BaseContext
     }
 
     /**
-     * Checks, that given JSON node exist
+     * Checks, that given JSON node exist.
      *
      * @Then the JSON node :name should exist
      */
@@ -266,7 +258,7 @@ class JsonContext extends BaseContext
     }
 
     /**
-     * Checks, that given JSON node does not exist
+     * Checks, that given JSON node does not exist.
      *
      * @Then the JSON node :name should not exist
      */
@@ -290,7 +282,7 @@ class JsonContext extends BaseContext
             throw new \Exception('The expected JSON is not a valid');
         }
 
-        $this->assertSame((string) $expected, (string) $actual, "The json is equal to:\n". $actual->encode());
+        $this->assertSame((string) $expected, (string) $actual, "The json is equal to:\n".$actual->encode());
     }
 
     /**
@@ -304,7 +296,11 @@ class JsonContext extends BaseContext
         $key = array_keys($first);
         $columns = $columns->getRows()[0];
 
-        $this->assertKeysOfJson($key, $columns);
+        try {
+            $this->assertKeysOfJson($key, $columns);
+        } catch (\Exception $e) {
+            throw new ArrayContainsComparatorException($e->getMessage(), 0, $e, $columns, $key);
+        }
     }
 
     /**
@@ -313,18 +309,19 @@ class JsonContext extends BaseContext
     public function theJsonShouldBeMatchTo(PyStringNode $string)
     {
         $expectedItem = json_decode($string->getRaw(), true) ?? [];
-        $item = $this->getJson()->getContent();
-        if ($item instanceof \stdClass) {
-            $item = json_decode(json_encode($item), true);
-        }
+        $item = json_decode(json_encode($this->getJson()->getContent()), true);
 
-        $this->assertKeysOfJson(array_keys($expectedItem), array_keys($item));
-        $this->assertValuesOfJson($expectedItem, $item);
+        try {
+            $this->assertKeysOfJson(array_keys($expectedItem), array_keys($item));
+            $this->assertValuesOfJson($expectedItem, $item);
+        } catch (\Exception $e) {
+            throw new ArrayContainsComparatorException($e->getMessage(), 0, $e, $expectedItem, $item);
+        }
     }
 
     protected function getJson(): Json
     {
-        return new Json($this->client->getResponseContent());
+        return new Json($this->getContent());
     }
 
     private function evaluate(Json $json, $expression)
@@ -336,46 +333,5 @@ class JsonContext extends BaseContext
         } catch (\Exception $ex) {
             throw new \Exception(sprintf('Failed to evaluate expression %s', $expression));
         }
-    }
-
-    private function assertValuesOfJson(array $expectedItem, array $item)
-    {
-        foreach ($expectedItem as $key => $expected) {
-            if ('<int>' === $expected) {
-                $this->assertTrue(\is_int($item[$key]));
-            } elseif ('<string>' === $expected) {
-                $this->assertTrue(is_string($item[$key]) && !empty($item[$key]));
-            } elseif ('<uuid>' === $expected) {
-                $this->assertTrue(is_string($item[$key]) && !empty($item[$key]));
-            } elseif ('<dateTime>' === $expected) {
-                $this->assertRegex('#[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\+[0-9]{2}:[0-9]{2}#', $item[$key]);
-            } elseif ('<date>' === $expected) {
-                $this->assertRegex('#[0-9]{4}-[0-9]{2}-[0-9]{2}#', $item[$key]);
-            } elseif (\is_array($expected)) {
-                $this->assertKeysOfJson(array_keys($expected), array_keys($item[$key]), $key);
-                $this->assertValuesOfJson($expected, $item[$key]);
-            } else {
-                $this->assertSame($expected, $item[$key]);
-            }
-        }
-    }
-
-    private function assertKeysOfJson(array $expectedKeys, array $columns, $parent = null)
-    {
-        $keys = array_diff($expectedKeys, $columns);
-        $keysMissing = array_diff($columns, $expectedKeys);
-
-        $message = null;
-        $messageParent = null === $parent ? '' : sprintf(' in parent %s', $parent);
-
-        if (!empty($keys)) {
-            $message = sprintf('Keys [%s] must not be present %s', implode(', ', $keys), $messageParent);
-        }
-
-        if (!empty($keysMissing)) {
-            $message = sprintf('%sKeys [%s] are missing %s', null !== $message ? $message.' and ' : '', implode(', ', $keysMissing), $messageParent);
-        }
-
-        $this->assertTrue(null === $message, $message);
     }
 }

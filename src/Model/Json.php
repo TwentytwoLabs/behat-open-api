@@ -22,7 +22,7 @@ class Json
 
     public function read($expression, PropertyAccessor $accessor)
     {
-        $expression =  preg_replace('/^root./', '', $expression);
+        $expression = preg_replace('/^root./', '', $expression);
 
         // If root asked, we return the entire content
         if (strlen(trim($expression)) <= 0) {
@@ -52,7 +52,7 @@ class Json
     {
         $result = json_decode($content);
 
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (JSON_ERROR_NONE !== json_last_error()) {
             throw new \Exception("The string '$content' is not valid json");
         }
 

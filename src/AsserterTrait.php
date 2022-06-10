@@ -2,38 +2,13 @@
 
 declare(strict_types=1);
 
-namespace TwentytwoLabs\BehatOpenApiExtension\Context;
+namespace TwentytwoLabs\BehatOpenApiExtension;
 
-use Behat\Behat\Context\Context;
-use Behat\Behat\Hook\Scope\BeforeScenarioScope;
-
-/**
- * Class BaseContext.
- */
-abstract class BaseContext implements Context, ClientAwareInterface
+trait AsserterTrait
 {
-    protected function not(callable $callbable, $errorMessage)
-    {
-        try {
-            $callbable();
-        }
-        catch (\Exception $e) {
-            return;
-        }
-
-        throw new \Exception($errorMessage);
-    }
-
-    protected function assert($test, $message)
-    {
-        if ($test === false) {
-            throw new \Exception($message);
-        }
-    }
-
     protected function assertContains($expected, $actual, $message = null)
     {
-        $regex   = '/' . preg_quote($expected, '/') . '/ui';
+        $regex = '/'.preg_quote($expected, '/').'/ui';
 
         $this->assert(preg_match($regex, $actual) > 0, $message ?: "The string '$expected' was not found.");
     }
@@ -42,7 +17,7 @@ abstract class BaseContext implements Context, ClientAwareInterface
     {
         $message = $message ?: "The string '$expected' was found.";
 
-        $this->not(function () use($expected, $actual) {
+        $this->not(function () use ($expected, $actual) {
             $this->assertContains($expected, $actual);
         }, $message);
     }
@@ -65,10 +40,15 @@ abstract class BaseContext implements Context, ClientAwareInterface
 
     protected function assertSame($expected, $actual, $message = null)
     {
-        $this->assert(
-            $expected === $actual,
-            $message ?: "The element '$actual' is not equal to '$expected'"
-        );
+        if (null === $message) {
+            $message = sprintf(
+                'The element %s is not equal to %s',
+                is_array($actual) ? implode(', ', $actual) : $actual,
+                is_array($expected) ? implode(', ', $expected) : $expected
+            );
+        }
+
+        $this->assert($expected === $actual, $message);
     }
 
     protected function assertArrayHasKey($key, $array, $message = null)
@@ -83,7 +63,7 @@ abstract class BaseContext implements Context, ClientAwareInterface
     {
         $message = $message ?: "The array has key '$key'";
 
-        $this->not(function () use($key, $array) {
+        $this->not(function () use ($key, $array) {
             $this->assertArrayHasKey($key, $array);
         }, $message);
     }
@@ -95,7 +75,7 @@ abstract class BaseContext implements Context, ClientAwareInterface
 
     protected function assertFalse($value, $message = 'The value is true')
     {
-        $this->not(function () use($value) {
+        $this->not(function () use ($value) {
             $this->assertTrue($value);
         }, $message);
     }
@@ -104,6 +84,24 @@ abstract class BaseContext implements Context, ClientAwareInterface
     {
         if (0 === preg_match($regex, $actual)) {
             throw new \Exception(sprintf("The node value is '%s'", json_encode($actual)));
+        }
+    }
+
+    protected function not(callable $callbable, $errorMessage)
+    {
+        try {
+            $callbable();
+        } catch (\Exception $e) {
+            return;
+        }
+
+        throw new \Exception($errorMessage);
+    }
+
+    protected function assert($test, $message)
+    {
+        if (false === $test) {
+            throw new \Exception($message);
         }
     }
 }

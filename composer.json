@@ -3,22 +3,39 @@
     "description": "Behatch contexts",
     "keywords": ["Behat", "Symfony", "OpenApi", "Swagger"],
     "type": "library",
-    "require": {
-        "php": ">=7.4",
-        "ext-json": "*",
-        "ext-mbstring": "*",
-        "behat/behat": "^3.0",
-        "guzzlehttp/guzzle": "^6.3",
-        "symfony/property-access": "^2.3|^3.0|^4.0|^5.0|^6.0",
-        "symfony/http-foundation": "^2.3|^3.0|^4.0|^5.0|^6.0",
-        "friends-of-behat/mink-extension": "^2.6"
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "infection/extension-installer": true
+        }
     },
     "autoload": {
         "psr-4": {
             "TwentytwoLabs\\BehatOpenApiExtension\\": "src/"
         }
     },
-    "config": {
-        "bin-dir": "bin/"
+    "require": {
+        "php": ">=7.4",
+        "ext-json": "*",
+        "ext-mbstring": "*",
+        "behat/behat": "^3.0",
+        "friends-of-behat/mink-extension": "^2.6",
+        "symfony/http-foundation": "^4.0|^5.0|^6.0",
+        "symfony/property-access": "^4.0|^5.0|^6.0",
+        "symfony/serializer": "^4.0|^5.0|^6.0",
+        "twentytwo-labs/api-validator": "^1.0",
+        "twentytwo-labs/array-comparator": "^1.0"
+    },
+    "require-dev": {
+        "friends-of-behat/mink-browserkit-driver": "^1.6",
+        "friendsofphp/php-cs-fixer": "^3.8",
+        "phpmd/phpmd": "^2.12",
+        "phpmetrics/phpmetrics": "^2.8",
+        "phpunit/phpunit": "^9.5",
+        "squizlabs/php_codesniffer": "^3.6"
+    },
+    "scripts": {
+        "cs": "vendor/bin/phpcs --standard=phpcs.xml.dist src",
+        "cs-fixer": "vendor/friendsofphp/php-cs-fixer/php-cs-fixer fix"
     }
 }
