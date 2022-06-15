@@ -6,6 +6,7 @@ namespace TwentytwoLabs\BehatOpenApiExtension\Context;
 
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
+use TwentytwoLabs\Api\Factory\OpenApiSchemaFactory;
 use TwentytwoLabs\Api\Factory\SwaggerSchemaFactory;
 use TwentytwoLabs\Api\Schema;
 use TwentytwoLabs\Api\Validator\Exception\ConstraintViolations;

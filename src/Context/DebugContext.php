@@ -26,4 +26,24 @@ class DebugContext extends RawRestContext
     {
         echo sprintf('The debug profile URL [%s]', $this->getResponseHeader('X-Debug-Token-Link'));
     }
+
+    /**
+     * @Then print last JSON response
+     */
+    public function printLastJsonResponse()
+    {
+        echo $this->getContent();
+    }
+
+    /**
+     * @Then print execution time
+     */
+    public function printExecutionTime()
+    {
+        if (null === $this->time) {
+            throw new \Exception(sprintf('You must send a HTTP request before print execution time'));
+        }
+
+        echo sprintf('The respond has been %s seconds', $time->format("%f") / 1000);
+    }
 }

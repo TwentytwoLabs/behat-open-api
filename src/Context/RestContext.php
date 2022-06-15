@@ -6,8 +6,6 @@ namespace TwentytwoLabs\BehatOpenApiExtension\Context;
 
 use Behat\Gherkin\Node\PyStringNode;
 use Behat\Gherkin\Node\TableNode;
-use Behat\Mink\Driver\Goutte\Client as GoutteClient;
-use Symfony\Component\HttpFoundation\File\UploadedFile;
 use TwentytwoLabs\BehatOpenApiExtension\AsserterTrait;
 
 /**
@@ -265,25 +263,5 @@ class RestContext extends RawRestContext
         }
 
         $this->theHeaderShouldContain('Content-Type', sprintf('charset=%s', $encoding));
-    }
-
-    private function send(string $method, string $url, array $parameters = [], array $files = [], ?string $content = null)
-    {
-        foreach ($files as $originalName => &$file) {
-            if (is_string($file)) {
-                $file = new UploadedFile($file, $originalName);
-            }
-        }
-
-        $client = $this->getClient();
-
-        $client->followRedirects(false);
-        $client->request($method, $url, $parameters, $files, [], $content);
-        $client->followRedirects();
-
-        $client->setServerParameters([]);
-        if ($client instanceof GoutteClient) {
-            $client->restart();
-        }
     }
 }
