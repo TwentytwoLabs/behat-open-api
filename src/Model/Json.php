@@ -8,14 +8,14 @@ use Symfony\Component\PropertyAccess\PropertyAccessor;
 
 class Json
 {
-    protected \stdClass $content;
+    protected $content;
 
     public function __construct($content)
     {
         $this->content = $this->decode((string) $content);
     }
 
-    public function getContent(): \stdClass
+    public function getContent()
     {
         return $this->content;
     }
@@ -48,7 +48,7 @@ class Json
         return $this->encode(false);
     }
 
-    private function decode($content): \stdClass
+    private function decode($content)
     {
         $result = json_decode($content);
 
