@@ -178,7 +178,7 @@ class JsonContext extends RawRestContext
      *
      * @Then the JSON node :node should have :count element(s)
      */
-    public function theJsonNodeShouldHaveElements($node, $count)
+    public function theJsonNodeShouldHaveElements(string $node, int $count)
     {
         $json = $this->getJson();
 

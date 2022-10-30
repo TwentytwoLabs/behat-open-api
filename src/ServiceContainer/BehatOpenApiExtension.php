@@ -17,6 +17,7 @@ use Symfony\Component\Serializer\Encoder\XmlEncoder;
 use Symfony\Component\Serializer\Encoder\YamlEncoder;
 use TwentytwoLabs\Api\Decoder\Adapter\SymfonyDecoderAdapter;
 use TwentytwoLabs\Api\Validator\MessageValidator;
+use TwentytwoLabs\ArrayComparator\Comparator\ArrayComparator;
 use TwentytwoLabs\ArrayComparator\Comparator\ComparatorChain;
 use TwentytwoLabs\ArrayComparator\Comparator\DateComparator;
 use TwentytwoLabs\ArrayComparator\Comparator\DateTimeComparator;
@@ -85,6 +86,7 @@ class BehatOpenApiExtension implements ExtensionInterface
             ->addMethodCall('addComparators', [new Definition(DateTimeComparator::class)])
             ->addMethodCall('addComparators', [new Definition(DateComparator::class)])
             ->addMethodCall('addComparators', [new Definition(UuidComparator::class)])
+            ->addMethodCall('addComparators', [new Definition(ArrayComparator::class)])
             ->addMethodCall('addComparators', [new Definition(SameComparator::class)])
         ;
 

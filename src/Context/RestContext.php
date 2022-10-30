@@ -138,8 +138,8 @@ class RestContext extends RawRestContext
         $actual = $this->getResponseHeader($name);
 
         $this->assertEquals(
-            strtolower($value),
-            strtolower($actual),
+            is_string($value) ? strtolower($value) : $value,
+            is_string($actual) ? strtolower($actual) : $actual,
             sprintf('The header [%s] should be equal to [%s], but it is: [%s]', $name, $value, $actual)
         );
     }
