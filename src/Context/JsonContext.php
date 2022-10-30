@@ -286,12 +286,14 @@ class JsonContext extends RawRestContext
     }
 
     /**
-     * @Then I should see JSON with key :
+     * @Then the JSON node :node should have key :
      */
-    public function assertTableColumns(TableNode $columns)
+    public function assertTableColumns(string $node, TableNode $columns)
     {
-        $items = $this->getJson()->getContent() ?? [];
-        $first = json_decode(json_encode(reset($items)), true);
+        $json = $this->getJson();
+
+        $actual = $this->evaluate($json, $node);
+        $first = json_decode(json_encode(reset($actual)), true);
 
         $key = array_keys($first);
         $columns = $columns->getRows()[0];

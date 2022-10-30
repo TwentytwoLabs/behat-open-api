@@ -26,7 +26,7 @@ abstract class RawRestContext extends RawMinkContext
         return $this->getSession()->getResponseHeaders();
     }
 
-    protected function getResponseHeader(string $name): ?string
+    protected function getResponseHeader(string $name): mixed
     {
         return $this->getSession()->getResponseHeader($name);
     }
