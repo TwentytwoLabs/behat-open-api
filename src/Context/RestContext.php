@@ -67,10 +67,14 @@ class RestContext extends RawRestContext
                 throw new \Exception("You must provide a 'key' and 'value' column in your table node.");
             }
 
-            $parameters[$row['key']] = $row['value'];
+            if (is_string($row['value']) && substr($row['value'], 0, 1) == '@') {
+                $files[$row['key']] = rtrim($this->getMinkParameter('files_path'), DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.substr($row['value'],1);
+            } else {
+                $parameters[$row['key']] = $row['value'];
+            }
         }
 
-        $this->send($method, $this->locatePath($path), $parameters);
+        $this->send($method, $this->locatePath($path), $parameters, $files);
     }
 
     /**
