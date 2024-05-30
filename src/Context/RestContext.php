@@ -6,21 +6,16 @@ namespace TwentytwoLabs\BehatOpenApiExtension\Context;
 
 use Behat\Gherkin\Node\PyStringNode;
 use Behat\Gherkin\Node\TableNode;
-use TwentytwoLabs\BehatOpenApiExtension\AsserterTrait;
+use Webmozart\Assert\Assert;
 
-/**
- * Class RestContext.
- */
-class RestContext extends RawRestContext
+final class RestContext extends RawRestContext
 {
-    use AsserterTrait;
-
     /**
      * Add an header element in a request.
      *
      * @Then I add :name header equal to :value
      */
-    public function iAddHeaderEqualTo($name, $value)
+    public function iAddHeaderEqualTo(string $name, string $value): void
     {
         $client = $this->getClient();
         // Goutte\Client
@@ -30,12 +25,12 @@ class RestContext extends RawRestContext
             // Symfony\Component\BrowserKit\Client
 
             /* taken from Behat\Mink\Driver\BrowserKitDriver::setRequestHeader */
-            $contentHeaders = ['CONTENT_LENGTH' => true, 'CONTENT_MD5' => true, 'CONTENT_TYPE' => true];
+            $contentHeaders = ['CONTENT_LENGTH', 'CONTENT_MD5', 'CONTENT_TYPE'];
             $name = str_replace('-', '_', strtoupper($name));
 
             // CONTENT_* are not prefixed with HTTP_ in PHP when building $_SERVER
-            if (!isset($contentHeaders[$name])) {
-                $name = 'HTTP_'.$name;
+            if (!\in_array($name, $contentHeaders)) {
+                $name = sprintf('HTTP_%s', $name);
             }
             /* taken from Behat\Mink\Driver\BrowserKitDriver::setRequestHeader */
 
@@ -48,9 +43,9 @@ class RestContext extends RawRestContext
      *
      * @Given I send a :method request to :path
      */
-    public function iSendARequestTo($method, $path, PyStringNode $body = null)
+    public function iSendARequestTo(string $method, string $path, ?PyStringNode $body = null): void
     {
-        $this->send($method, $this->locatePath($path), [], [], null !== $body ? $body->getRaw() : null);
+        $this->send($method, $this->locatePath($path), [], [], $body?->getRaw());
     }
 
     /**
@@ -58,23 +53,27 @@ class RestContext extends RawRestContext
      *
      * @Given I send a :method request to :path with parameters:
      */
-    public function iSendARequestToWithParameters($method, $path, TableNode $data)
+    public function iSendARequestToWithParameters(string $method, string $path, TableNode $data): void
     {
         $parameters = [];
+        $files = [];
 
         foreach ($data->getHash() as $row) {
             if (!isset($row['key']) || !isset($row['value'])) {
                 throw new \Exception("You must provide a 'key' and 'value' column in your table node.");
             }
 
-            if (is_string($row['value']) && substr($row['value'], 0, 1) == '@') {
-                $files[$row['key']] = rtrim($this->getMinkParameter('files_path'), DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.substr($row['value'],1);
+            if (is_string($row['value']) && str_starts_with($row['value'], '@')) {
+                $filePath = rtrim($this->getMinkParameter('files_path'), DIRECTORY_SEPARATOR);
+                $files[$row['key']] = sprintf('%s%s%s', $filePath, DIRECTORY_SEPARATOR, substr($row['value'], 1));
             } else {
                 $parameters[$row['key']] = $row['value'];
             }
         }
 
-        $this->send($method, $this->locatePath($path), $parameters, $files);
+        parse_str(http_build_query($parameters), $output);
+
+        $this->send($method, $this->locatePath($path), $output, $files);
     }
 
     /**
@@ -82,7 +81,7 @@ class RestContext extends RawRestContext
      *
      * @Given I send a :method request to :path with body:
      */
-    public function iSendARequestToWithBody($method, $path, PyStringNode $body)
+    public function iSendARequestToWithBody(string $method, string $path, PyStringNode $body): void
     {
         $this->iSendARequestTo($method, $path, $body);
     }
@@ -94,7 +93,7 @@ class RestContext extends RawRestContext
      *
      * @Then /^the response status code should be equal to (?P<code>\d+)$/
      */
-    public function assertResponseStatus($code)
+    public function assertResponseStatus(int $code): void
     {
         $this->assertSession()->statusCodeEquals($code);
     }
@@ -105,16 +104,12 @@ class RestContext extends RawRestContext
      * @Then the response should be equal to
      * @Then the response should be equal to:
      */
-    public function theResponseShouldBeEqualTo(PyStringNode $expected)
+    public function theResponseShouldBeEqualTo(PyStringNode $expected): void
     {
-        $expected = str_replace('\\"', '"', $expected);
+        $expected = str_replace('\\"', '"', $expected->getRaw());
         $actual = $this->getContent();
 
-        $this->assertEquals(
-            $expected,
-            $actual,
-            sprintf('Actual response is [%s], but expected [%s]', $actual, $expected)
-        );
+        Assert::same($actual, $expected, sprintf('Actual response is [%s], but expected [%s]', $actual, $expected));
     }
 
     /**
@@ -122,14 +117,11 @@ class RestContext extends RawRestContext
      *
      * @Then the response should be empty
      */
-    public function theResponseShouldBeEmpty()
+    public function theResponseShouldBeEmpty(): void
     {
         $actual = $this->getContent();
 
-        $this->assertTrue(
-            empty($actual),
-            sprintf('The response of the current page is not empty, it is: %s', $actual)
-        );
+        Assert::isEmpty($actual, sprintf('The response of the current page is not empty, it is: %s', $actual));
     }
 
     /**
@@ -137,13 +129,13 @@ class RestContext extends RawRestContext
      *
      * @Then the header :name should be equal to :value
      */
-    public function theHeaderShouldBeEqualTo($name, $value)
+    public function theHeaderShouldBeEqualTo(string $name, string $value): void
     {
         $actual = $this->getResponseHeader($name);
 
-        $this->assertEquals(
-            is_string($value) ? strtolower($value) : $value,
-            is_string($actual) ? strtolower($actual) : $actual,
+        Assert::same(
+            null === $actual ? null : strtolower($actual),
+            strtolower($value),
             sprintf('The header [%s] should be equal to [%s], but it is: [%s]', $name, $value, $actual)
         );
     }
@@ -153,13 +145,15 @@ class RestContext extends RawRestContext
      *
      * @Then the header :name should not be equal to :value
      */
-    public function theHeaderShouldNotBeEqualTo($name, $value)
+    public function theHeaderShouldNotBeEqualTo(string $name, string $value): void
     {
         $actual = $this->getResponseHeader($name);
 
-        if (strtolower($value) === strtolower($actual)) {
-            throw new \Exception(sprintf('The header [%s] is equal to %s', $name, $actual));
-        }
+        Assert::notSame(
+            strtolower($actual),
+            strtolower($value),
+            sprintf('The header [%s] is equal to %s', $name, $actual)
+        );
     }
 
     /**
@@ -167,11 +161,11 @@ class RestContext extends RawRestContext
      *
      * @Then the header :name should contain :value
      */
-    public function theHeaderShouldContain($name, $value)
+    public function theHeaderShouldContain(string $name, string $value): void
     {
         $actual = $this->getResponseHeader($name);
 
-        $this->assertContains(
+        Assert::contains(
             $value,
             $actual,
             sprintf('The header [%s] should contain value [%s] but actual value is [%s]', $name, $value, $actual)
@@ -183,9 +177,9 @@ class RestContext extends RawRestContext
      *
      * @Then the header :name should not contain :value
      */
-    public function theHeaderShouldNotContain($name, $value)
+    public function theHeaderShouldNotContain(string $name, string $value): void
     {
-        $this->assertNotContains(
+        Assert::notContains(
             $value,
             $this->getResponseHeader($name),
             sprintf('The header [%s] contains [%s]', $name, $value)
@@ -197,31 +191,21 @@ class RestContext extends RawRestContext
      *
      * @Then the header :name should not exist
      */
-    public function theHeaderShouldNotExist($name)
+    public function theHeaderShouldNotExist(string $name): void
     {
-        $this->not(
-            function () use ($name) {
-                $this->theHeaderShouldExist($name);
-            },
-            sprintf('The header [%s] exists', $name)
-        );
-    }
-
-    protected function theHeaderShouldExist($name): ?string
-    {
-        return $this->getResponseHeader($name);
+        Assert::null($this->getResponseHeader($name));
     }
 
     /**
      * @Then the header :name should match :regex
      */
-    public function theHeaderShouldMatch($name, $regex)
+    public function theHeaderShouldMatch(string $name, string $regex): void
     {
         $actual = $this->getResponseHeader($name);
 
-        $this->assertEquals(
-            1,
-            preg_match($regex, $actual),
+        Assert::regex(
+            $regex,
+            $actual,
             sprintf('The header [%s] should match [%s], but it is: [%s]', $name, $regex, $actual)
         );
     }
@@ -229,13 +213,14 @@ class RestContext extends RawRestContext
     /**
      * @Then the header :name should not match :regex
      */
-    public function theHeaderShouldNotMatch($name, $regex)
+    public function theHeaderShouldNotMatch(string $name, string $regex): void
     {
-        $this->not(
-            function () use ($name, $regex) {
-                $this->theHeaderShouldMatch($name, $regex);
-            },
-            sprintf('The header [%s] should not match [%s]', $name, $regex)
+        $actual = $this->getResponseHeader($name);
+
+        Assert::notRegex(
+            $regex,
+            $actual,
+            sprintf('The header [%s] should match [%s], but it is: [%s]', $name, $regex, $actual)
         );
     }
 
@@ -244,14 +229,14 @@ class RestContext extends RawRestContext
      *
      * @Then the response should expire in the future
      */
-    public function theResponseShouldExpireInTheFuture()
+    public function theResponseShouldExpireInTheFuture(): void
     {
         $date = new \DateTime($this->getResponseHeader('Date'));
         $expires = new \DateTime($this->getResponseHeader('Expires'));
 
-        $this->assertSame(
-            1,
+        Assert::same(
             $expires->diff($date)->invert,
+            1,
             sprintf('The response doesn\'t expire in the future (%s)', $expires->format(DATE_ATOM))
         );
     }
@@ -259,7 +244,7 @@ class RestContext extends RawRestContext
     /**
      * @Then the response should be encoded in :encoding
      */
-    public function theResponseShouldBeEncodedIn($encoding)
+    public function theResponseShouldBeEncodedIn(string $encoding): void
     {
         $content = $this->getContent();
         if (!mb_check_encoding($content, $encoding)) {
@@ -267,5 +252,10 @@ class RestContext extends RawRestContext
         }
 
         $this->theHeaderShouldContain('Content-Type', sprintf('charset=%s', $encoding));
+    }
+
+    protected function theHeaderShouldExist(string $name): ?string
+    {
+        return $this->getResponseHeader($name);
     }
 }

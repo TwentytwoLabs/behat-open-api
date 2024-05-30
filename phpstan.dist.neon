@@ -1,0 +1,7 @@
+parameters:
+    level: 6
+    excludePaths:
+        - src/ServiceContainer/BehatOpenApiExtension.php
+    paths:
+        - src/
+        - tests/

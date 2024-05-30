@@ -9,10 +9,7 @@ use Behat\Behat\Context\Initializer\ContextInitializer;
 use TwentytwoLabs\ArrayComparator\Comparator\ComparatorChain;
 use TwentytwoLabs\BehatOpenApiExtension\Context\JsonContext;
 
-/**
- * class JsonInitializer.
- */
-class JsonInitializer implements ContextInitializer
+final class JsonInitializer implements ContextInitializer
 {
     private ComparatorChain $comparatorChain;
 
@@ -21,12 +18,10 @@ class JsonInitializer implements ContextInitializer
         $this->comparatorChain = $comparatorChain;
     }
 
-    public function initializeContext(Context $context)
+    public function initializeContext(Context $context): void
     {
         if ($context instanceof JsonContext) {
-            $context
-                ->setComparatorChain($this->comparatorChain)
-            ;
+            $context->setComparatorChain($this->comparatorChain);
         }
     }
 }

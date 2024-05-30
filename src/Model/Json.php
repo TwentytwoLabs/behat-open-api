@@ -6,49 +6,43 @@ namespace TwentytwoLabs\BehatOpenApiExtension\Model;
 
 use Symfony\Component\PropertyAccess\PropertyAccessor;
 
-class Json
+final class Json
 {
-    protected $content;
+    protected mixed $content;
 
-    public function __construct($content)
+    public function __construct(string $content)
     {
-        $this->content = $this->decode((string) $content);
+        $this->content = $this->decode($content);
     }
 
-    public function getContent()
+    public function getContent(): mixed
     {
         return $this->content;
     }
 
-    public function read($expression, PropertyAccessor $accessor)
+    public function read(string $expression, PropertyAccessor $accessor): mixed
     {
-        $expression = preg_replace('/^root./', '', $expression);
+        $expression = preg_replace('/^root\./', '', trim($expression));
 
         // If root asked, we return the entire content
-        if (strlen(trim($expression)) <= 0) {
+        if (strlen($expression) <= 0) {
             return $this->content;
         }
 
         return $accessor->getValue($this->content, $expression);
     }
 
-    public function encode($pretty = true)
+    public function encode(): bool|string
     {
-        $flags = JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE;
-
-        if (true === $pretty && defined('JSON_PRETTY_PRINT')) {
-            $flags |= JSON_PRETTY_PRINT;
-        }
-
-        return json_encode($this->content, $flags);
+        return json_encode($this->content, JSON_PRETTY_PRINT);
     }
 
-    public function __toString()
+    public function __toString(): string
     {
-        return $this->encode(false);
+        return $this->encode();
     }
 
-    private function decode($content)
+    private function decode(string $content): mixed
     {
         $result = json_decode($content);
 

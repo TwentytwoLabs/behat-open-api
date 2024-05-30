@@ -1,3 +1,7 @@
+.phpunit.cache
 bin
+coverage
 composer.lock
+log
+var
 vendor

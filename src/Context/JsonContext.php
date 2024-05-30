@@ -8,16 +8,12 @@ use Behat\Gherkin\Node\PyStringNode;
 use Behat\Gherkin\Node\TableNode;
 use Symfony\Component\PropertyAccess\PropertyAccessor;
 use TwentytwoLabs\ArrayComparator\AsserterTrait as ArrayComparatorAsserterTrait;
-use TwentytwoLabs\BehatOpenApiExtension\AsserterTrait;
 use TwentytwoLabs\BehatOpenApiExtension\Exception\ArrayContainsComparatorException;
 use TwentytwoLabs\BehatOpenApiExtension\Model\Json;
+use Webmozart\Assert\Assert;
 
-/**
- * Class JsonContext.
- */
-class JsonContext extends RawRestContext
+final class JsonContext extends RawRestContext
 {
-    use AsserterTrait;
     use ArrayComparatorAsserterTrait;
 
     /**
@@ -25,9 +21,9 @@ class JsonContext extends RawRestContext
      *
      * @Then the response should be in JSON
      */
-    public function theResponseShouldBeInJson()
+    public function theResponseShouldBeInJson(): void
     {
-        $this->assertContains('json', $this->getResponseHeader('Content-Type'));
+        Assert::regex($this->getResponseHeader('Content-Type'), '/json/ui');
         $this->getJson();
     }
 
@@ -36,9 +32,17 @@ class JsonContext extends RawRestContext
      *
      * @Then the response should not be in JSON
      */
-    public function theResponseShouldNotBeInJson()
+    public function theResponseShouldNotBeInJson(): void
     {
-        $this->not([$this, 'theResponseShouldBeInJson'], 'The response is in JSON');
+        Assert::notRegex($this->getResponseHeader('Content-Type'), '/json/ui', 'The response is in JSON');
+
+        try {
+            $this->getJson();
+        } catch (\Exception) {
+            return;
+        }
+
+        throw new \Exception('The response is in JSON');
     }
 
     /**
@@ -46,15 +50,13 @@ class JsonContext extends RawRestContext
      *
      * @Then the JSON node :node should be equal to :text
      */
-    public function theJsonNodeShouldBeEqualTo($node, $text)
+    public function theJsonNodeShouldBeEqualTo(string $node, string $text): void
     {
         $json = $this->getJson();
 
         $actual = $this->evaluate($json, $node);
 
-        if ($actual !== $text) {
-            throw new \Exception(sprintf("The node value is '%s'", json_encode($actual)));
-        }
+        Assert::same($text, $actual, sprintf("The node value is '%s'", json_encode($actual)));
     }
 
     /**
@@ -62,7 +64,7 @@ class JsonContext extends RawRestContext
      *
      * @Then the JSON nodes should be equal to:
      */
-    public function theJsonNodesShouldBeEqualTo(TableNode $nodes)
+    public function theJsonNodesShouldBeEqualTo(TableNode $nodes): void
     {
         foreach ($nodes->getRowsHash() as $node => $text) {
             $this->theJsonNodeShouldBeEqualTo($node, $text);
@@ -74,15 +76,13 @@ class JsonContext extends RawRestContext
      *
      * @Then the JSON node :node should match :pattern
      */
-    public function theJsonNodeShouldMatch($node, $pattern)
+    public function theJsonNodeShouldMatch(string $node, string $pattern): void
     {
         $json = $this->getJson();
 
         $actual = $this->evaluate($json, $node);
 
-        if (0 === preg_match($pattern, $actual)) {
-            throw new \Exception(sprintf("The node value is '%s'", json_encode($actual)));
-        }
+        Assert::regex($actual, $pattern, sprintf("The node value is '%s'", json_encode($actual)));
     }
 
     /**
@@ -90,15 +90,13 @@ class JsonContext extends RawRestContext
      *
      * @Then the JSON node :node should be null
      */
-    public function theJsonNodeShouldBeNull($node)
+    public function theJsonNodeShouldBeNull(string $node): void
     {
         $json = $this->getJson();
 
         $actual = $this->evaluate($json, $node);
 
-        if (null !== $actual) {
-            throw new \Exception(sprintf('The node value is `%s`', json_encode($actual)));
-        }
+        Assert::null($actual, sprintf('The node value is `%s`', json_encode($actual)));
     }
 
     /**
@@ -106,11 +104,13 @@ class JsonContext extends RawRestContext
      *
      * @Then the JSON node :node should not be null
      */
-    public function theJsonNodeShouldNotBeNull($node)
+    public function theJsonNodeShouldNotBeNull(string $node): void
     {
-        $this->not(function () use ($node) {
-            $this->theJsonNodeShouldBeNull($node);
-        }, sprintf('The node %s should not be null', $node));
+        $json = $this->getJson();
+
+        $actual = $this->evaluate($json, $node);
+
+        Assert::notNull($actual, sprintf('The node %s should not be null', json_encode($actual)));
     }
 
     /**
@@ -118,13 +118,13 @@ class JsonContext extends RawRestContext
      *
      * @Then the JSON node :node should be true
      */
-    public function theJsonNodeShouldBeTrue($node)
+    public function theJsonNodeShouldBeTrue(string $node): void
     {
         $json = $this->getJson();
 
         $actual = $this->evaluate($json, $node);
 
-        $this->assertTrue($actual, sprintf('The node value is `%s`', json_encode($actual)));
+        Assert::true($actual, sprintf('The node value is `%s`', json_encode($actual)));
     }
 
     /**
@@ -132,29 +132,13 @@ class JsonContext extends RawRestContext
      *
      * @Then the JSON node :node should be false
      */
-    public function theJsonNodeShouldBeFalse($node)
+    public function theJsonNodeShouldBeFalse(string $node): void
     {
         $json = $this->getJson();
 
         $actual = $this->evaluate($json, $node);
 
-        $this->assertFalse($actual, sprintf('The node value is `%s`', json_encode($actual)));
-    }
-
-    /**
-     * Checks, that given JSON node is equal to the given string.
-     *
-     * @Then the JSON node :node should be equal to the string :text
-     */
-    public function theJsonNodeShouldBeEqualToTheString($node, $text)
-    {
-        $json = $this->getJson();
-
-        $actual = $this->evaluate($json, $node);
-
-        if ($actual !== $text) {
-            throw new \Exception(sprintf('The node value is `%s`', json_encode($actual)));
-        }
+        Assert::false($actual, sprintf('The node value is `%s`', json_encode($actual)));
     }
 
     /**
@@ -162,7 +146,7 @@ class JsonContext extends RawRestContext
      *
      * @Then the JSON node :node should be equal to the number :number
      */
-    public function theJsonNodeShouldBeEqualToTheNumber($node, $number)
+    public function theJsonNodeShouldBeEqualToTheNumber(string $node, string $number): void
     {
         $json = $this->getJson();
 
@@ -178,13 +162,13 @@ class JsonContext extends RawRestContext
      *
      * @Then the JSON node :node should have :count element(s)
      */
-    public function theJsonNodeShouldHaveElements(string $node, int $count)
+    public function theJsonNodeShouldHaveElements(string $node, int $count): void
     {
         $json = $this->getJson();
 
         $actual = $this->evaluate($json, $node);
 
-        $this->assertSame($count, sizeof((array) $actual));
+        Assert::count((array) $actual, $count);
     }
 
     /**
@@ -192,13 +176,13 @@ class JsonContext extends RawRestContext
      *
      * @Then the JSON node :node should contain :text
      */
-    public function theJsonNodeShouldContain($node, $text)
+    public function theJsonNodeShouldContain(string $node, string $text): void
     {
         $json = $this->getJson();
 
         $actual = $this->evaluate($json, $node);
 
-        $this->assertContains($text, (string) $actual);
+        Assert::regex($actual, sprintf('/%s/ui', preg_quote($text, '/')));
     }
 
     /**
@@ -206,7 +190,7 @@ class JsonContext extends RawRestContext
      *
      * @Then the JSON nodes should contain:
      */
-    public function theJsonNodesShouldContain(TableNode $nodes)
+    public function theJsonNodesShouldContain(TableNode $nodes): void
     {
         foreach ($nodes->getRowsHash() as $node => $text) {
             $this->theJsonNodeShouldContain($node, $text);
@@ -218,13 +202,13 @@ class JsonContext extends RawRestContext
      *
      * @Then the JSON node :node should not contain :text
      */
-    public function theJsonNodeShouldNotContain($node, $text)
+    public function theJsonNodeShouldNotContain(string $node, string $text): void
     {
         $json = $this->getJson();
 
         $actual = $this->evaluate($json, $node);
 
-        $this->assertNotContains($text, (string) $actual);
+        Assert::notContains($actual, $text);
     }
 
     /**
@@ -232,7 +216,7 @@ class JsonContext extends RawRestContext
      *
      * @Then the JSON nodes should not contain:
      */
-    public function theJsonNodesShouldNotContain(TableNode $nodes)
+    public function theJsonNodesShouldNotContain(TableNode $nodes): void
     {
         foreach ($nodes->getRowsHash() as $node => $text) {
             $this->theJsonNodeShouldNotContain($node, $text);
@@ -244,17 +228,15 @@ class JsonContext extends RawRestContext
      *
      * @Then the JSON node :name should exist
      */
-    public function theJsonNodeShouldExist($name)
+    public function theJsonNodeShouldExist(string $name): mixed
     {
-        $json = $this->getJson();
-
         try {
-            $node = $this->evaluate($json, $name);
-        } catch (\Exception $e) {
+            $json = $this->getJson();
+
+            return $this->evaluate($json, $name);
+        } catch (\Exception) {
             throw new \Exception("The node '$name' does not exist.");
         }
-
-        return $node;
     }
 
     /**
@@ -262,53 +244,65 @@ class JsonContext extends RawRestContext
      *
      * @Then the JSON node :name should not exist
      */
-    public function theJsonNodeShouldNotExist($name)
+    public function theJsonNodeShouldNotExist(string $name): void
     {
-        $this->not(function () use ($name) {
-            return $this->theJsonNodeShouldExist($name);
-        }, "The node '$name' exists.");
+        try {
+            $json = $this->getJson();
+            $this->evaluate($json, $name);
+        } catch (\Exception) {
+            return;
+        }
+
+        throw new \Exception("The node '$name' exists.");
     }
 
     /**
      * @Then the JSON should be equal to:
      */
-    public function theJsonShouldBeEqualTo(PyStringNode $content)
+    public function theJsonShouldBeEqualTo(PyStringNode $content): void
     {
-        $actual = $this->getJson();
-
         try {
-            $expected = new Json($content);
-        } catch (\Exception $e) {
+            $actual = $this->getJson();
+            $expected = new Json((string) $content);
+        } catch (\Exception) {
             throw new \Exception('The expected JSON is not a valid');
         }
 
-        $this->assertSame((string) $expected, (string) $actual, "The json is equal to:\n".$actual->encode());
+        Assert::same((string) $actual, (string) $expected, sprintf("The json is equal to:\n%s", $actual->encode()));
     }
 
     /**
      * @Then the JSON node :node should have key :
      */
-    public function assertTableColumns(string $node, TableNode $columns)
+    public function assertTableColumns(string $node, TableNode $columns): void
     {
         $json = $this->getJson();
 
         $actual = $this->evaluate($json, $node);
-        $first = json_decode(json_encode(reset($actual)), true);
+
+        $first = json_decode(json_encode(current($actual)), true);
 
         $key = array_keys($first);
-        $columns = $columns->getRows()[0];
+        $columns = current($columns->getRows());
 
         try {
             $this->assertKeysOfJson($key, $columns);
         } catch (\Exception $e) {
-            throw new ArrayContainsComparatorException($e->getMessage(), 0, $e, $columns, $key);
+            $e = new ArrayContainsComparatorException(
+                message: $e->getMessage(),
+                previous: $e,
+                needle: $columns,
+                haystack: $key
+            );
+
+            throw $e;
         }
     }
 
     /**
      * @Then the JSON should be match to:
      */
-    public function theJsonShouldBeMatchTo(PyStringNode $string)
+    public function theJsonShouldBeMatchTo(PyStringNode $string): void
     {
         $expectedItem = json_decode($string->getRaw(), true) ?? [];
         $item = json_decode(json_encode($this->getJson()->getContent()), true);
@@ -317,22 +311,29 @@ class JsonContext extends RawRestContext
             $this->assertKeysOfJson(array_keys($expectedItem), array_keys($item));
             $this->assertValuesOfJson($expectedItem, $item);
         } catch (\Exception $e) {
-            throw new ArrayContainsComparatorException($e->getMessage(), 0, $e, $expectedItem, $item);
+            $e = new ArrayContainsComparatorException(
+                message: $e->getMessage(),
+                previous: $e,
+                needle: $expectedItem,
+                haystack: $item
+            );
+
+            throw $e;
         }
     }
 
-    protected function getJson(): Json
+    private function getJson(): Json
     {
         return new Json($this->getContent());
     }
 
-    private function evaluate(Json $json, $expression)
+    private function evaluate(Json $json, string $expression): mixed
     {
         $expression = str_replace('->', '.', $expression);
 
         try {
             return $json->read($expression, new PropertyAccessor());
-        } catch (\Exception $ex) {
+        } catch (\Exception) {
             throw new \Exception(sprintf('Failed to evaluate expression %s', $expression));
         }
     }

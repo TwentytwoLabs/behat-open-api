@@ -15,8 +15,8 @@ use Symfony\Component\Serializer\Encoder\ChainDecoder;
 use Symfony\Component\Serializer\Encoder\JsonDecode;
 use Symfony\Component\Serializer\Encoder\XmlEncoder;
 use Symfony\Component\Serializer\Encoder\YamlEncoder;
-use TwentytwoLabs\Api\Decoder\Adapter\SymfonyDecoderAdapter;
-use TwentytwoLabs\Api\Validator\MessageValidator;
+use TwentytwoLabs\ApiValidator\Decoder\Adapter\SymfonyDecoderAdapter;
+use TwentytwoLabs\ApiValidator\Validator\MessageValidator;
 use TwentytwoLabs\ArrayComparator\Comparator\ArrayComparator;
 use TwentytwoLabs\ArrayComparator\Comparator\ComparatorChain;
 use TwentytwoLabs\ArrayComparator\Comparator\DateComparator;
@@ -28,31 +28,27 @@ use TwentytwoLabs\ArrayComparator\Comparator\UuidComparator;
 use TwentytwoLabs\BehatOpenApiExtension\Initializer\JsonInitializer;
 use TwentytwoLabs\BehatOpenApiExtension\Initializer\OpenApiInitializer;
 
-/**
- * class BehatOpenApiExtension.
- */
-class BehatOpenApiExtension implements ExtensionInterface
+final class BehatOpenApiExtension implements ExtensionInterface
 {
     public function getConfigKey(): string
     {
         return 'open_api_extension';
     }
 
-    public function initialize(ExtensionManager $extensionManager)
+    public function initialize(ExtensionManager $extensionManager): void
     {
     }
 
-    public function configure(ArrayNodeDefinition $builder)
+    public function configure(ArrayNodeDefinition $builder): void
     {
         $builder
             ->children()
-                ->scalarNode('schemaFile')
-                ->defaultNull()
+                ->scalarNode('schemaFile')->defaultNull()->end()
             ->end()
         ;
     }
 
-    public function load(ContainerBuilder $container, array $config)
+    public function load(ContainerBuilder $container, array $config): void
     {
         $chainDecoderDefinition = new Definition(
             ChainDecoder::class,
@@ -73,7 +69,10 @@ class BehatOpenApiExtension implements ExtensionInterface
 
         $openApiInitializerDefinition = new Definition(
             OpenApiInitializer::class,
-            ['$schemaFile' => $config['schemaFile'], '$validator' => $validatorDefinition]
+            [
+                '$validator' => $validatorDefinition,
+                '$schemaFile' => null === $config['schemaFile'] ? null : $this->resolveFile($config['schemaFile']),
+            ]
         );
         $openApiInitializerDefinition->addTag(ContextExtension::INITIALIZER_TAG, ['priority' => 0]);
 
@@ -101,5 +100,18 @@ class BehatOpenApiExtension implements ExtensionInterface
 
     public function process(ContainerBuilder $container)
     {
+    }
+
+    private function resolveFile(string $file): string
+    {
+        if (str_starts_with($file, 'file://')) {
+            return str_replace(
+                [sprintf('.%s', DIRECTORY_SEPARATOR), sprintf('%%kernel.project%%%s', DIRECTORY_SEPARATOR)],
+                sprintf('%s%s', realpath('.'), DIRECTORY_SEPARATOR),
+                $file
+            );
+        }
+
+        return $file;
     }
 }

@@ -1,0 +1,70 @@
+name: Audits
+on: [push, pull_request]
+
+jobs:
+   phpstan:
+      name: PHP ${{ matrix.php }} Phpstan
+      runs-on: ubuntu-latest
+      strategy:
+         matrix:
+            php: [ '8.1', '8.2', '8.3' ]
+      steps:
+         - name: Checkout
+           uses: actions/checkout@v4
+
+         - name: Setup PHP
+           uses: shivammathur/setup-php@v2
+           with:
+              php-version: 8.2
+              coverage: xdebug
+
+         - name: Get Composer Cache Directory
+           id: composer-cache
+           run: echo "::set-output name=dir::$(composer config cache-files-dir)"
+
+         - name: Cache dependencies
+           uses: actions/cache@v3
+           with:
+              path: ${{ steps.composer-cache.outputs.dir }}
+              key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
+              restore-keys: ${{ runner.os }}-composer-
+
+         - name: Install Dependencies
+           run: composer install --prefer-dist --no-interaction --optimize-autoloader
+
+         - name: Run PHPStan
+           run: composer phpstan
+
+   cs:
+      name: PHP ${{ matrix.php }} CS
+      runs-on: ubuntu-latest
+      strategy:
+         matrix:
+            php: [ '8.1', '8.2', '8.3' ]
+
+      steps:
+         -  name: Checkout
+            uses: actions/checkout@v4
+
+         -  name: Setup PHP
+            uses: shivammathur/setup-php@v2
+            with:
+               php-version: 8.2
+               coverage: xdebug
+
+         -  name: Get Composer Cache Directory
+            id: composer-cache
+            run: echo "::set-output name=dir::$(composer config cache-files-dir)"
+
+         -  name: Cache dependencies
+            uses: actions/cache@v3
+            with:
+               path: ${{ steps.composer-cache.outputs.dir }}
+               key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
+               restore-keys: ${{ runner.os }}-composer-
+
+         -  name: Install Dependencies
+            run: composer install --prefer-dist --no-interaction --optimize-autoloader
+
+         -  name: Execute CS
+            run: composer cs-fixer

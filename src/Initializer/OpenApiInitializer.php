@@ -6,24 +6,21 @@ namespace TwentytwoLabs\BehatOpenApiExtension\Initializer;
 
 use Behat\Behat\Context\Context;
 use Behat\Behat\Context\Initializer\ContextInitializer;
-use TwentytwoLabs\Api\Validator\MessageValidator;
+use TwentytwoLabs\ApiValidator\Validator\MessageValidator;
 use TwentytwoLabs\BehatOpenApiExtension\Context\OpenApiContext;
 
-/**
- * class OpenApiInitializer.
- */
-class OpenApiInitializer implements ContextInitializer
+final class OpenApiInitializer implements ContextInitializer
 {
-    private ?string $schemaFile;
     private MessageValidator $validator;
+    private ?string $schemaFile;
 
-    public function __construct(?string $schemaFile, MessageValidator $validator)
+    public function __construct(MessageValidator $validator, ?string $schemaFile)
     {
-        $this->schemaFile = $schemaFile;
         $this->validator = $validator;
+        $this->schemaFile = $schemaFile;
     }
 
-    public function initializeContext(Context $context)
+    public function initializeContext(Context $context): void
     {
         if ($context instanceof OpenApiContext) {
             $context

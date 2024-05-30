@@ -6,16 +6,12 @@ namespace TwentytwoLabs\BehatOpenApiExtension\Context;
 
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
-use TwentytwoLabs\Api\Factory\OpenApiSchemaFactory;
-use TwentytwoLabs\Api\Factory\SwaggerSchemaFactory;
-use TwentytwoLabs\Api\Schema;
-use TwentytwoLabs\Api\Validator\Exception\ConstraintViolations;
-use TwentytwoLabs\Api\Validator\MessageValidator;
+use TwentytwoLabs\ApiValidator\Factory\OpenApiSchemaFactory;
+use TwentytwoLabs\ApiValidator\Schema;
+use TwentytwoLabs\ApiValidator\Validator\ConstraintViolation;
+use TwentytwoLabs\ApiValidator\Validator\MessageValidator;
 
-/**
- * class OpenApiContext.
- */
-class OpenApiContext extends RawRestContext
+final class OpenApiContext extends RawRestContext
 {
     private MessageValidator $validator;
     private ?Schema $schema = null;
@@ -23,14 +19,15 @@ class OpenApiContext extends RawRestContext
     /**
      * @Then the response should be valid according to the operation id :arg1
      */
-    public function theResponseShouldBeValidAccordingToTheOperationId($arg1)
+    public function theResponseShouldBeValidAccordingToTheOperationId(string $arg1): void
     {
-        $requestDefinition = $this->getSchema()->getRequestDefinition($arg1);
+        $requestDefinition = $this->getSchema()->getOperationDefinition($arg1);
 
-        $this->validator->validateResponse($this->buildPsr7Request(), $requestDefinition);
-
+        $this->validator->validateResponse($this->buildPsr7Response(), $requestDefinition);
         if ($this->validator->hasViolations()) {
-            throw new ConstraintViolations($this->validator->getViolations());
+            $items = array_map(fn (ConstraintViolation $item) => $item->toArray(), $this->validator->getViolations());
+
+            throw new \Exception(sprintf('%s%s', json_encode($items, JSON_PRETTY_PRINT), PHP_EOL));
         }
     }
 
@@ -44,7 +41,8 @@ class OpenApiContext extends RawRestContext
     public function setSchemaFile(?string $schemaFile): self
     {
         if (null !== $schemaFile) {
-            $this->schema = (new SwaggerSchemaFactory())->createSchema($schemaFile);
+            $factory = new OpenApiSchemaFactory();
+            $this->schema = $factory->createSchema($schemaFile);
         }
 
         return $this;
@@ -59,7 +57,7 @@ class OpenApiContext extends RawRestContext
         return $this->schema;
     }
 
-    private function buildPsr7Request(): ResponseInterface
+    private function buildPsr7Response(): ResponseInterface
     {
         return new Response(
             $this->getSession()->getStatusCode(),
