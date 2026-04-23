@@ -34,12 +34,12 @@
         "behat/behat": "^3.0",
         "friends-of-behat/mink-extension": "^2.6",
         "guzzlehttp/psr7": "^2.3",
-        "symfony/http-foundation": "^5.0|^6.0|^7.0",
-        "symfony/property-access": "^5.0|^6.0|^7.0",
-        "symfony/serializer": "^5.0|^6.0|^7.0",
+        "symfony/http-foundation": "^5.0|^6.0|^7.0|^8.0",
+        "symfony/property-access": "^5.0|^6.0|^7.0|^8.0",
+        "symfony/serializer": "^5.0|^6.0|^7.0|^8.0",
         "twentytwo-labs/api-validator": "^2.0",
         "twentytwo-labs/array-comparator": "^1.0",
-        "webmozart/assert": "^1.11"
+        "webmozart/assert": "^1.11|^2.0"
     },
     "require-dev": {
         "friends-of-behat/mink-browserkit-driver": "^1.6",
