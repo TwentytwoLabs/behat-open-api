@@ -15,7 +15,7 @@ final class ArrayContainsComparatorException extends \Exception
         int $code = 0,
         ?\Exception $previous = null,
         array $needle = [],
-        array $haystack = []
+        array $haystack = [],
     ) {
         $message .= sprintf('%s%s', PHP_EOL, PHP_EOL);
         $message .= sprintf('=============================================================================%s', PHP_EOL);

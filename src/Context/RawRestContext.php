@@ -7,10 +7,15 @@ namespace TwentytwoLabs\BehatOpenApiExtension\Context;
 use Behat\Mink\Driver\BrowserKitDriver;
 use Behat\MinkExtension\Context\RawMinkContext;
 use Symfony\Component\BrowserKit\AbstractBrowser;
+use Symfony\Component\BrowserKit\Request;
+use Symfony\Component\BrowserKit\Response;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 abstract class RawRestContext extends RawMinkContext
 {
+    /**
+     * @return AbstractBrowser<Request, Response>
+     */
     protected function getClient(): AbstractBrowser
     {
         /** @var BrowserKitDriver $driver */
@@ -46,7 +51,7 @@ abstract class RawRestContext extends RawMinkContext
         string $url,
         array $parameters = [],
         array $files = [],
-        ?string $content = null
+        ?string $content = null,
     ): void {
         foreach ($files as $originalName => &$file) {
             if (is_string($file)) {

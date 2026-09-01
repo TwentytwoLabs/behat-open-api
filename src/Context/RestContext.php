@@ -63,7 +63,7 @@ final class RestContext extends RawRestContext
                 throw new \Exception("You must provide a 'key' and 'value' column in your table node.");
             }
 
-            if (is_string($row['value']) && str_starts_with($row['value'], '@')) {
+            if (str_starts_with($row['value'], '@')) {
                 $filePath = rtrim($this->getMinkParameter('files_path'), DIRECTORY_SEPARATOR);
                 $files[$row['key']] = sprintf('%s%s%s', $filePath, DIRECTORY_SEPARATOR, substr($row['value'], 1));
             } else {

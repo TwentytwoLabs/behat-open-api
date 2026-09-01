@@ -8,7 +8,7 @@ use Symfony\Component\PropertyAccess\PropertyAccessor;
 
 final class Json
 {
-    protected mixed $content;
+    private mixed $content;
 
     public function __construct(string $content)
     {
