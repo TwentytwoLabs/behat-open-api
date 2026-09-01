@@ -7,6 +7,7 @@ namespace TwentytwoLabs\BehatOpenApiExtension\Tests\Context;
 use Behat\Mink\Driver\BrowserKitDriver;
 use Behat\Mink\Mink;
 use Behat\Mink\Session;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
 use Symfony\Component\BrowserKit\HttpBrowser;
@@ -14,6 +15,7 @@ use Symfony\Component\DomCrawler\Crawler;
 use TwentytwoLabs\BehatOpenApiExtension\Context\RestContext;
 use PHPUnit\Framework\TestCase;
 
+#[AllowMockObjectsWithoutExpectations]
 final class RestContextTest extends TestCase
 {
     private Mink|MockObject $mink;

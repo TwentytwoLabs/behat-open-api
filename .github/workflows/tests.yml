@@ -1,27 +1,59 @@
 name: Tests
-on: [push, pull_request]
+on: [ push, pull_request ]
 
 jobs:
    tests:
-      name: PHP ${{ matrix.php }} Latest
+      name: PHP ${{ matrix.php }} and Symfony ${{ matrix.symfony-version }}
       runs-on: ubuntu-latest
       strategy:
          matrix:
-            php: ['8.1', '8.2', '8.3']
+            php: [ '8.3', '8.4', '8.5' ]
+            symfony-version: [ '6.4.*', '7.4.*', '8.1.*' ]
+            exclude:
+               -  php: '8.3'
+                  symfony-version: '8.1.*'
+         fail-fast: false
 
       steps:
-         - name: Checkout code
-           uses: actions/checkout@v2
+         -  name: Checkout code
+            uses: actions/checkout@v4
 
-         - name: Setup PHP
-           uses: shivammathur/setup-php@v2
-           with:
-              php-version: ${{ matrix.php }}
-              tools: composer:v2
-              coverage: none
+         -  name: Setup PHP
+            uses: shivammathur/setup-php@v2
+            with:
+               php-version: ${{ matrix.php }}
+               coverage: xdebug
 
-         - name: Install PHP dependencies
-           run: composer update --prefer-dist --no-interaction --no-progress
+         -  name: "Add dependencies"
+            run: "composer require --no-progress --no-scripts --no-plugins symfony/flex"
 
-         - name: Execute tests
-           run: composer test
+         -  name: "Allow Symfony Flex plugin"
+            run: "composer config --no-plugins allow-plugins.symfony/flex true"
+
+         -  name: Get Composer Cache Directory
+            id: composer-cache
+            run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+         -  name: Cache dependencies
+            uses: actions/cache@v4
+            with:
+               path: ${{ steps.composer-cache.outputs.dir }}
+               key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
+               restore-keys: ${{ runner.os }}-composer-
+
+         -  name: Setup Composer minimum stability if required
+            run: composer config minimum-stability dev
+            if: ${{ contains(fromJSON('["8.1.*"]'), matrix.symfony-version) }}
+
+         -  name: Install symfony version from matrix
+            env:
+               SYMFONY_VERSION: ${{ matrix.symfony-version }}
+            run: |-
+               composer require symfony/framework-bundle:$SYMFONY_VERSION --no-update
+               composer require symfony/console:$SYMFONY_VERSION --no-update
+
+         -  name: Install Dependencies
+            run: composer update --prefer-dist --no-interaction --optimize-autoloader --no-progress
+
+         -  name: Execute tests
+            run: composer test

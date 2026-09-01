@@ -9,6 +9,7 @@ use Behat\Gherkin\Node\TableNode;
 use Behat\Mink\Driver\DriverInterface;
 use Behat\Mink\Mink;
 use Behat\Mink\Session;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use TwentytwoLabs\ArrayComparator\Comparator\ComparatorChain;
@@ -16,6 +17,7 @@ use TwentytwoLabs\BehatOpenApiExtension\Context\JsonContext;
 use TwentytwoLabs\BehatOpenApiExtension\Exception\ArrayContainsComparatorException;
 use Webmozart\Assert\InvalidArgumentException;
 
+#[AllowMockObjectsWithoutExpectations]
 final class JsonContextTest extends TestCase
 {
     private Mink|MockObject $mink;
