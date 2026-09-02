@@ -18,7 +18,7 @@ abstract class RawRestContext extends RawMinkContext
      */
     protected function getClient(): AbstractBrowser
     {
-        /** @var BrowserKitDriver $driver */
+        /** @var BrowserKitDriver<Request, Response> $driver */
         $driver = $this->getSession()->getDriver();
 
         return $driver->getClient();

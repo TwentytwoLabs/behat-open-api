@@ -42,7 +42,7 @@
         "webmozart/assert": "^1.11|^2.0"
     },
     "require-dev": {
-        "friends-of-behat/mink-browserkit-driver": "^1.6",
+        "behat/mink-browserkit-driver": "^2.3",
         "friendsofphp/php-cs-fixer": "^3.8",
         "infection/infection": "^0.29|^0.35",
         "phpstan/phpstan": "^2.0",
